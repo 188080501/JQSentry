@@ -24,19 +24,27 @@ Sentry已经提供了C++ SDK，如果想直接使用Sentry提供的C++ SDK，可
 
 ## 关于JQSentry
 
-JQSentry基于Sentry的HTTP接口封装而来，目前一共有3个主要功能
+JQSentry基于Sentry的HTTP接口封装而来，目前一共有3个功能
 
-* 日志 & 异常 收集
+* 日志数据收集，对应Sentry中Issues模块
 
-* minidump 收集
+* minidump数据收集，对应Sentry中Issues模块
 
-* performance & trace 收集
+* performance数据收集，对应Sentry中Performance模块
 
 为了保证使用足够轻量级，方便嵌入到各种系统中。JQSentry被完整封装在一个cpp和几个h文件中，并且只依赖Qt库。
 
 理论上可以部署到 Qt5 & C++11 的所有环境中。
 
 若你遇到问题、有了更好的建议或者想要一些新功能，都可以直接在GitHub上提交Issues：https://github.com/188080501/JQSentry/issues
+
+如果需要扩展JQSentry，增加新数据或者模块，可以参考以下官网文档：
+
+* 日志数据：https://docs.sentry.io/api/events/retrieve-the-latest-event-for-an-issue/
+
+* minidump数据：https://docs.sentry.io/platforms/native/guides/minidumps/
+
+* performance数据：https://docs.sentry.io/api/events/retrieve-the-latest-event-for-an-issue/
 
 
 ## 使用JQSentry
@@ -46,8 +54,10 @@ JQSentry基于Sentry的HTTP接口封装而来，目前一共有3个主要功能
 * 初始化模块，并设置DSN
 
 ```
-JQSentry::initialize( "https://e9b577341ff2463e95d4944ffd3b9a39@o495303.ingest.sentry.io/5567822" );
+JQSentry::initialize( "https://key@o495303.ingest.sentry.io/123456" );
 ```
+
+> 注：DSN就相当于一个key，和项目绑定。请勿对外泄漏DSN。本Demo中DSN为测试使用，请替换成你自己项目实际DSN
 
 * 上传log
 
