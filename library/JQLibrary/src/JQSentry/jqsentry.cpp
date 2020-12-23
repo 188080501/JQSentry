@@ -90,7 +90,7 @@ bool JQSentry::initialize(const QString &dsn)
     protocol_  = url.scheme();
     publicKey_ = url.userName();
     host_      = url.host();
-    port_      = static_cast< quint16 >( url.port( 80 ) );
+    port_      = static_cast< quint16 >( url.port( ( dsn.startsWith( "https" ) ) ? ( 443 ) : ( 80 ) ) );
     path_      = url.path();
     projectId_ = url.fileName();
 
