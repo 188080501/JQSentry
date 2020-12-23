@@ -312,7 +312,7 @@ void JQSentry::handleReply(QNetworkReply *reply)
             const auto &&data = QJsonDocument::fromJson( rawData ).object();
             if ( data[ "id" ].toString().isEmpty() )
             {
-                qDebug() << "JQSentry::handleReply: data error:" << data;
+                qDebug() << "JQSentry::handleReply: data error:" << rawData.constData();
             }
         }
 
@@ -328,7 +328,7 @@ void JQSentry::handleReply(QNetworkReply *reply)
         if ( *isCalled ) { return; }
         *isCalled = true;
 
-        qDebug() << "JQSentry::handleReply: error:" << code << ", message:" << reply->readAll();
+        qDebug() << "JQSentry::handleReply: error:" << code << ", message:" << reply->readAll().constData();
 
         reply->deleteLater();
     } );

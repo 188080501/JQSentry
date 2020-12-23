@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
     // 这里初始化填写DSN，请换成实际DSN，这里写的是我测试用的
     JQSentry::initialize( "https://e9b577341ff2463e95d4944ffd3b9a39@o495303.ingest.sentry.io/5567822" );
 
-    // 手动上传一条log
-    JQSentry::postLog( "This is a log" );
+    // 手动上传一条log，指定类型为 QtDebugMsg
+    JQSentry::postLog( "This is a debug" );
 
     // 注册全局消息捕获，注册后会自动捕获 qWarning 和 qCritical 中包含的信息，也包括Qt内部报错
     JQSentry::installMessageHandler();
