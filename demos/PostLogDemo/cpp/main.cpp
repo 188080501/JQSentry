@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
 
     // 注册全局消息捕获后，使用QDebug系列接口就可以完成对应的上传
     qWarning() << "This is a warning";
+    qCritical() << "This is a critical";
 
     // 注册全局消息捕获后，也会捕获Qt内部的报错，这里模拟一次Qt发出的报错
     QFile file( "qrc:/this_file_not_exists" );
