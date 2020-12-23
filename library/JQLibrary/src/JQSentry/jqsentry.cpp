@@ -319,12 +319,16 @@ void JQSentry::handleReply(QNetworkReply *reply)
         reply->deleteLater();
     } );
 
+#if ( QT_VERSION >= 0x050F00 )
+    QObject::connect( reply, static_cast< void( QNetworkReply::* )( QNetworkReply::NetworkError ) >( &QNetworkReply::errorOccurred ), [ reply, isCalled ](const QNetworkReply::NetworkError &code)
+#else
     QObject::connect( reply, static_cast< void( QNetworkReply::* )( QNetworkReply::NetworkError ) >( &QNetworkReply::error ), [ reply, isCalled ](const QNetworkReply::NetworkError &code)
+#endif
     {
         if ( *isCalled ) { return; }
         *isCalled = true;
 
-        qDebug() << "JQSentry::handleReply: error:" << code << reply->readAll();
+        qDebug() << "JQSentry::handleReply: error:" << code << ", message:" << reply->readAll();
 
         reply->deleteLater();
     } );
