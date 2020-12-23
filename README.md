@@ -44,10 +44,13 @@ JQSentry基于Sentry的HTTP接口封装而来，目前一共有3个功能
 
 * minidump数据：https://docs.sentry.io/platforms/native/guides/minidumps/
 
-* performance数据：https://docs.sentry.io/api/events/retrieve-the-latest-event-for-an-issue/
+* performance数据：https://develop.sentry.dev/sdk/envelopes/ & https://docs.sentry.io/product/performance/getting-started/
 
 
 ## 使用JQSentry
+
+
+### 上传log
 
 只需要2步即可完成一个log上传
 
@@ -59,8 +62,26 @@ JQSentry::initialize( "https://key@o495303.ingest.sentry.io/123456" );
 
 > 注：DSN就相当于一个key，和项目绑定。请勿对外泄漏DSN。本Demo中DSN为测试使用，请替换成你自己项目实际DSN
 
-* 上传log
+* 上传
 
 ```
 JQSentry::postLog( "This is a debug" );
+```
+
+### 上传minidump
+
+和上传log一样，需要先初始化，再上传minidump
+
+这里需要注意的是，JQSentry不负责minidump原始文件的收集，minidump文件收集需要使用os api
+
+* 上传
+
+```
+QFile minidumpFile( ":/test.dmp" );
+minidumpFile.open( QIODevice::ReadOnly );
+
+JQSentry::postMinidump(
+    "This is a minidump",
+    "test",
+    minidumpFile.readAll() );
 ```
