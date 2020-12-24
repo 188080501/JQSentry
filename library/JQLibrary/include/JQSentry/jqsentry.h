@@ -7,12 +7,28 @@
 // Qt lib import
 #include <QObject>
 #include <QPointer>
+#include <QSharedPointer>
+#include <QVector>
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
 
 // JQLibrary lib import
 #include <../JQDeclare>
+
+class JQSentrySpan;
+class JQSentrySpan;
+
+struct JQSentrySpanData
+{
+    QString operationName;
+    QString description;
+    QString parentSpanId;
+    QString spanId;
+
+    QDateTime startTime;
+    QDateTime endTime;
+};
 
 class JQSentryTransit: public QObject
 {
@@ -49,6 +65,8 @@ public:
 
     static bool postMinidump(const QString &log, const QString &dumpFileName, const QByteArray &dumpFileData);
 
+    static bool postPerformance(const QVector< JQSentrySpanData > &spanDataList);
+
 
     inline static void setServerName(const QString &serverName);
 
@@ -68,6 +86,8 @@ private:
     static QJsonObject sentryData();
 
     static QByteArray xSentryAuth();
+
+    static QJsonValue dateTimeToSentryTime(const QDateTime &time);
 
 private:
     static QSharedPointer< QNetworkAccessManager > networkAccessManager_;
@@ -90,6 +110,32 @@ private:
     static QString userName_;
     static QString userIpAddress_;
     static QString release_;
+};
+
+class JQLIBRARY_EXPORT JQSentrySpan
+{
+private:
+    JQSentrySpan(
+        const QString &operationName,
+        const QString &description );
+
+public:
+    ~JQSentrySpan();
+
+    static QSharedPointer< JQSentrySpan > create(
+        const QString &operationName,
+        const QString &description );
+
+    static QSharedPointer< JQSentrySpan > create(
+        const QString &                       operationName,
+        const QString &                       description,
+        const QSharedPointer< JQSentrySpan > &parent );
+
+private:
+    JQSentrySpanData spanData_;
+
+    QWeakPointer< JQSentrySpan > rootSpan_;
+    QVector< JQSentrySpanData >  spanDataList_;
 };
 
 // .inc include

@@ -27,5 +27,7 @@ int main(int argc, char *argv[])
     QFile file( "qrc:/this_file_not_exists" );
     file.write( "balabala" );
 
+    // Sentry的数据会在后台上传，主线程必须开启事件循环
+    QTimer::singleShot( 10000, &app, &QCoreApplication::quit );
     return app.exec();
 }

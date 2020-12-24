@@ -22,5 +22,7 @@ int main(int argc, char *argv[])
         "test",
         minidumpFile.readAll() );
 
+    // Sentry的数据会在后台上传，主线程必须开启事件循环
+    QTimer::singleShot( 10000, &app, &QCoreApplication::quit );
     return app.exec();
 }

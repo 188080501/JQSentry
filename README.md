@@ -159,7 +159,13 @@ GitHub地址：https://github.com/188080501/JQSentry
 
 和上传log一样，需要先初始化，再上传minidump
 
-这里需要注意的是，JQSentry不负责minidump原始文件的收集，minidump文件收集需要使用OS API，例如Windows下可以使用```SetUnhandledExceptionFilter```
+这里需要注意的是，JQSentry不负责minidump原始文件的收集。
+
+因为minidump文件收集是一个大概念，比较复杂，而且不同平台处理不一样，因此暂时没计划集成到JQSentry中
+
+minidump文件收集需要使用OS API，例如Windows下可以使用```SetUnhandledExceptionFilter```
+
+Demo中的dmp文件是我提前从其他程序中收集好的，仅供测试。
 
 * 上传
 
@@ -190,6 +196,76 @@ GitHub地址：https://github.com/188080501/JQSentry
     如果需要进一步调试，可以下载minidump文件到本地，通过VS等工具进一步调试。在页面最下方可以下载。
 
     ![](./doc/2.5.png)
+
+### 上传performance
+
+和上传log一样，需要先初始化，再上传performance
+
+* 上传
+
+    ```
+    void something()
+    {
+        // 模拟一些流程，通过msleep模拟耗时操作
+        // 这里是通过手动方式生成span，没有指定parent的为root span，生命周期结束后就会上传数据
+        // 指定parent的span，生命周期结束后，会写入结果数据到root span中，等待root span一起上传
+        // 结果数据包括创建span是指定的operationName、description、span创建时间和span销毁时间
+
+        auto rootSpan = JQSentrySpan::create( "WorkResult", "saveToFile" );
+
+        QThread::msleep( 20 );
+
+        for ( auto index = 0; index < 3; ++index )
+        {
+            auto readyDataSpan = JQSentrySpan::create( "DataProvider", "readyData", rootSpan );
+
+            QThread::msleep( 20 );
+        }
+
+        {
+            auto saveStep1Span = JQSentrySpan::create( "DataSaver", "saveStep1", rootSpan );
+
+            QThread::msleep( 5 );
+
+            {
+                auto saveStep2Span = JQSentrySpan::create( "DataSaver", "saveStep2", saveStep1Span );
+
+                QThread::msleep( 10 );
+
+                {
+                    // 也可以提前释放span
+                    saveStep1Span.clear();
+
+                    auto saveStep3Span = JQSentrySpan::create( "DataSaver", "saveStep3", saveStep2Span );
+
+                    QThread::msleep( 50 );
+                }
+            }
+        }
+
+        {
+            auto cleanSpan = JQSentrySpan::create( "WorkResult", "cleanBuffer", rootSpan );
+
+            QThread::msleep( 10 );
+        }
+
+        QThread::msleep( 5 );
+    }
+    ```
+
+* 查看数据
+
+    运行Demo中的PostMinidumpDemo工程，在Sentry的Performance界面中可以看到如下数据
+
+    ![](./doc/2.6.png)
+
+    注意这里Filter是可选的，默认是按照耗时来排序，可以根据自己需求选择
+
+    ![](./doc/2.7.png)
+
+    根据ID，可以定位到具体到一组Span，这里总耗时就是之前代码中root span的生命周期
+
+    ![](./doc/2.8.png)
 
 
 ## Sentry局限性

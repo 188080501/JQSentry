@@ -4,6 +4,7 @@
 // Qt lib import
 #include <QDebug>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QNetworkReply>
 #include <QUuid>
@@ -297,6 +298,119 @@ bool JQSentry::postMinidump(const QString &log, const QString &dumpFileName, con
     return true;
 }
 
+bool JQSentry::postPerformance(const QVector< JQSentrySpanData > &spanDataList)
+{
+    if ( !networkAccessManager_ ) { return false; }
+
+    if ( !continueFlag_ ) { return false; }
+
+    if ( spanDataList.isEmpty() ) { return false; }
+
+    if ( QThread::currentThread() != transit_->thread() )
+    {
+        transit_->transit( [ = ]()
+        {
+            JQSentry::postPerformance( spanDataList );
+        } );
+        return true;
+    }
+
+    const auto eventId = QUuid::createUuid().toString().mid( 1, 36 ).remove( "-" );
+    const auto traceId = QUuid::createUuid().toString().mid( 1, 36 ).remove( "-" );
+
+    auto data = sentryData();
+
+    QJsonObject eventObject;
+
+    eventObject[ "event_id" ] = eventId;
+
+    QJsonObject transactionObject;
+
+    transactionObject[ "type" ] = "transaction";
+
+    {
+        QJsonArray sampleRates;
+        QJsonObject sampleRate;
+
+        sampleRate[ "id" ] = "client_rate";
+        sampleRate[ "rate" ] = "1";
+
+        sampleRates.push_back( sampleRate );
+        transactionObject[ "sample_rates" ] = sampleRates;
+    }
+
+    QDateTime testTime = QDateTime::currentDateTime();
+
+    auto performanceObject = sentryData();
+
+    performanceObject[ "event_id" ]        = eventId;
+    performanceObject[ "type" ]            = "transaction";
+    performanceObject[ "timestamp" ]       = dateTimeToSentryTime( spanDataList.first().endTime );
+    performanceObject[ "start_timestamp" ] = dateTimeToSentryTime( spanDataList.first().startTime );
+    performanceObject[ "transaction" ]     = spanDataList.first().description;
+
+    {
+        auto contexts = performanceObject[ "contexts" ].toObject();
+        QJsonObject trace;
+
+        trace[ "op" ]          = spanDataList.first().operationName;
+        trace[ "description" ] = spanDataList.first().description;
+        trace[ "span_id" ]     = spanDataList.first().spanId;
+        trace[ "trace_id" ]    = traceId;
+        trace[ "status" ]      = "ok";
+        trace[ "data" ]        = "This is data";
+
+        contexts[ "trace" ] = trace;
+        performanceObject[ "contexts" ] = contexts;
+    }
+
+    {
+        QJsonArray spans;
+
+        for ( auto spanIndex = 1; spanIndex < spanDataList.size(); ++spanIndex )
+        {
+            QJsonObject span;
+
+            span[ "op" ]              = spanDataList[ spanIndex ].operationName;
+            span[ "description" ]     = spanDataList[ spanIndex ].description;
+            span[ "parent_span_id" ]  = spanDataList[ spanIndex ].parentSpanId;
+            span[ "span_id" ]         = spanDataList[ spanIndex ].spanId;
+            span[ "trace_id" ]        = traceId;
+            span[ "start_timestamp" ] = dateTimeToSentryTime( spanDataList[ spanIndex ].startTime );
+            span[ "timestamp" ]       = dateTimeToSentryTime( spanDataList[ spanIndex ].endTime );
+
+            spans.push_back( span );
+        }
+
+        performanceObject[ "spans" ] = spans;
+    }
+
+    const auto url = QString( "%1://%2:%3%4/api/%5/envelope/" )
+                         .arg( protocol_ )
+                         .arg( host_ )
+                         .arg( port_ )
+                         .arg( path_ )
+                         .arg( projectId_ );
+    const auto auth = xSentryAuth();
+
+    QNetworkRequest request( url );
+    request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+    request.setRawHeader( "X-Sentry-Auth", xSentryAuth() );
+
+    QByteArray postData;
+
+    postData += QJsonDocument( eventObject ).toJson( QJsonDocument::Compact );
+    postData += "\n";
+    postData += QJsonDocument( transactionObject ).toJson( QJsonDocument::Compact );
+    postData += "\n";
+    postData += QJsonDocument( performanceObject ).toJson( QJsonDocument::Compact );
+    postData += "\n";
+
+    handleReply( networkAccessManager_->post( request, postData ) );
+
+    return true;
+}
+
 void JQSentry::handleReply(QNetworkReply *reply)
 {
     QSharedPointer< bool > isCalled( new bool( false ) );
@@ -352,7 +466,7 @@ QJsonObject JQSentry::sentryData()
 {
     QJsonObject data;
 
-    data[ "timestamp" ] = static_cast< int >( QDateTime::currentDateTime().toTime_t() );
+    data[ "timestamp" ] = dateTimeToSentryTime( QDateTime::currentDateTime() );
     data[ "platform" ]  = "C++/Qt";
     data[ "logger" ] = clientName_;
 
@@ -429,5 +543,67 @@ QByteArray JQSentry::xSentryAuth()
                .arg(
                    QString::number( QDateTime::currentDateTime().toTime_t() ),
                    publicKey_,
-                   "" ).toUtf8();
+                "" ).toUtf8();
+}
+
+QJsonValue JQSentry::dateTimeToSentryTime(const QDateTime &time)
+{
+    return static_cast< qreal >( time.toMSecsSinceEpoch() ) / 1000.0;
+}
+
+// JQSentrySpan
+JQSentrySpan::JQSentrySpan(
+    const QString &operationName,
+    const QString &description )
+{
+    spanData_.operationName = operationName;
+    spanData_.description   = description;
+    spanData_.spanId        = QUuid::createUuid().toString().mid( 1, 36 ).remove( "-" ).mid( 0, 16 );
+
+    spanData_.startTime = QDateTime::currentDateTime();
+}
+
+JQSentrySpan::~JQSentrySpan()
+{
+    spanData_.endTime = QDateTime::currentDateTime();
+
+    if ( spanDataList_.isEmpty() )
+    {
+        if ( rootSpan_ )
+        {
+            rootSpan_.toStrongRef()->spanDataList_.push_back( spanData_ );
+        }
+
+    }
+    else
+    {
+        spanDataList_[ 0 ] = spanData_;
+
+        JQSentry::postPerformance( spanDataList_ );
+    }
+}
+
+QSharedPointer< JQSentrySpan > JQSentrySpan::create(
+    const QString &operationName,
+    const QString &description )
+{
+    QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
+
+    result->rootSpan_ = result.toWeakRef();
+    result->spanDataList_.push_back( { } );
+
+    return result;
+}
+
+QSharedPointer< JQSentrySpan > JQSentrySpan::create(
+    const QString &                       operationName,
+    const QString &                       description,
+    const QSharedPointer< JQSentrySpan > &parent )
+{
+    QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
+
+    result->spanData_.parentSpanId = parent->spanData_.spanId;
+    result->rootSpan_ = parent->rootSpan_;
+
+    return result.toWeakRef();
 }
