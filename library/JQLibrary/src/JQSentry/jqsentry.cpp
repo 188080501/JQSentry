@@ -552,6 +552,8 @@ QJsonValue JQSentry::dateTimeToSentryTime(const QDateTime &time)
 }
 
 // JQSentrySpan
+QMutex JQSentrySpan::mutex_;
+
 JQSentrySpan::JQSentrySpan(
     const QString &operationName,
     const QString &description )
@@ -565,6 +567,8 @@ JQSentrySpan::JQSentrySpan(
 
 JQSentrySpan::~JQSentrySpan()
 {
+    QMutexLocker locker( &mutex_ );
+
     spanData_.endTime = QDateTime::currentDateTime();
 
     if ( spanDataList_.isEmpty() )
@@ -587,6 +591,8 @@ QSharedPointer< JQSentrySpan > JQSentrySpan::create(
     const QString &operationName,
     const QString &description )
 {
+    QMutexLocker locker( &mutex_ );
+
     QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
 
     result->rootSpan_ = result.toWeakRef();
@@ -600,6 +606,8 @@ QSharedPointer< JQSentrySpan > JQSentrySpan::create(
     const QString &                       description,
     const QSharedPointer< JQSentrySpan > &parent )
 {
+    QMutexLocker locker( &mutex_ );
+
     QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
 
     result->spanData_.parentSpanId = parent->spanData_.spanId;

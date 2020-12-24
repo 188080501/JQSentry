@@ -12,6 +12,7 @@
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
+#include <QMutex>
 
 // JQLibrary lib import
 #include <../JQDeclare>
@@ -132,6 +133,8 @@ public:
         const QSharedPointer< JQSentrySpan > &parent );
 
 private:
+    static QMutex mutex_;
+
     JQSentrySpanData spanData_;
 
     QWeakPointer< JQSentrySpan > rootSpan_;
