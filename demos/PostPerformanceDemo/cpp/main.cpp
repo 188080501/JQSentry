@@ -11,17 +11,23 @@ void something()
     // 指定parent的span，生命周期结束后，会写入结果数据到root span中，等待root span一起上传
     // 结果数据包括创建span是指定的operationName、description、span创建时间和span销毁时间
 
-    auto rootSpan = JQSentrySpan::create( "WorkResult", "saveToFile" );
+    // 可以附带数据，方便调试
+    QJsonObject data;
+
+    data[ "key" ]   = "mykey1";
+    data[ "value" ] = "myvalue1";
+
+    auto rootSpan = JQSentrySpan::create( "WorkResult", "saveToFile", data );
 
     QThread::msleep( 20 );
 
     for ( auto index = 0; index < 3; ++index )
     {
-        auto readyDataSpan = JQSentrySpan::create( "DataProvider", "readyData", rootSpan );
+        auto readyDataSpan = JQSentrySpan::create( rootSpan, "DataProvider", "readyData" );
 
         QThread::msleep( 20 );
 
-        if ( index == 2 )
+        if ( index == 1 )
         {
             // 不需要上传时可以cancel
             readyDataSpan->cancel();
@@ -29,12 +35,13 @@ void something()
     }
 
     {
-        auto saveStep1Span = JQSentrySpan::create( "DataSaver", "saveStep1", rootSpan );
+        auto saveStep1Span = JQSentrySpan::create( rootSpan, "DataSaver", "saveStep1" );
 
         QThread::msleep( 5 );
 
         {
-            auto saveStep2Span = JQSentrySpan::create( "DataSaver", "saveStep2", saveStep1Span );
+            // 可以不指定description
+            auto saveStep2Span = JQSentrySpan::create( saveStep1Span, "DataSaver" );
 
             QThread::msleep( 10 );
 
@@ -42,7 +49,10 @@ void something()
                 // 也可以提前释放span
                 saveStep1Span.clear();
 
-                auto saveStep3Span = JQSentrySpan::create( "DataSaver", "saveStep3", saveStep2Span );
+                auto saveStep3Span = JQSentrySpan::create( saveStep2Span, "DataSaver", "saveStep3" );
+
+                // 指定status，具体可以填写哪些值，请参考HTTP的status，不可以自定义
+                saveStep3Span->setStatus( "internal_error" );
 
                 QThread::msleep( 50 );
             }
@@ -50,7 +60,7 @@ void something()
     }
 
     {
-        auto cleanSpan = JQSentrySpan::create( "WorkResult", "cleanBuffer", rootSpan );
+        auto cleanSpan = JQSentrySpan::create( rootSpan, "WorkResult", "cleanBuffer", data );
 
         QThread::msleep( 10 );
     }

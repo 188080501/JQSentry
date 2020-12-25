@@ -9,6 +9,7 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <QVector>
+#include <QJsonValue>
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
@@ -22,8 +23,11 @@ class JQSentrySpan;
 
 struct JQSentrySpanData
 {
-    QString operationName;
-    QString description;
+    QString    operationName;
+    QString    description;
+    QJsonValue data;
+    QString    status;
+
     QString parentSpanId;
     QString spanId;
 
@@ -117,18 +121,27 @@ class JQLIBRARY_EXPORT JQSentrySpan
 {
 private:
     JQSentrySpan(
-        const QString &operationName,
-        const QString &description );
+        const QString &   operationName,
+        const QString &   description,
+        const QJsonValue &data );
 
 public:
     ~JQSentrySpan();
 
     static QSharedPointer< JQSentrySpan > create(
+        const QSharedPointer< JQSentrySpan > &parent,
         const QString &                       operationName,
-        const QString &                       description,
-        const QSharedPointer< JQSentrySpan > &parent = nullptr );
+        const QString &                       description = QString(),
+        const QJsonValue &                    data = QJsonValue() );
+
+    inline static QSharedPointer< JQSentrySpan > create(
+        const QString &                       operationName,
+        const QString &                       description = QString(),
+        const QJsonValue &                    data = QJsonValue() );
 
     inline void cancel();
+
+    inline void setStatus(const QString &status);
 
 private:
     static QMutex mutex_;

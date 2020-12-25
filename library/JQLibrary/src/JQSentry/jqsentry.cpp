@@ -354,11 +354,17 @@ bool JQSentry::postPerformance(const QVector< JQSentrySpanData > &spanDataList)
         QJsonObject trace;
 
         trace[ "op" ]          = spanDataList.first().operationName;
-        trace[ "description" ] = spanDataList.first().description;
+        if ( !spanDataList.first().description.isEmpty() )
+        {
+            trace[ "description" ] = spanDataList.first().description;
+        }
         trace[ "span_id" ]     = spanDataList.first().spanId;
         trace[ "trace_id" ]    = traceId;
-        trace[ "status" ]      = "ok";
-        trace[ "data" ]        = "This is data";
+        trace[ "status" ]      = spanDataList.first().status;
+        if ( !spanDataList.first().data.isNull() )
+        {
+            trace[ "data" ] = spanDataList.first().data;
+        }
 
         contexts[ "trace" ] = trace;
         performanceObject[ "contexts" ] = contexts;
@@ -373,6 +379,11 @@ bool JQSentry::postPerformance(const QVector< JQSentrySpanData > &spanDataList)
 
             span[ "op" ]              = spanDataList[ spanIndex ].operationName;
             span[ "description" ]     = spanDataList[ spanIndex ].description;
+            span[ "status" ]          = spanDataList[ spanIndex ].status;
+            if ( !spanDataList[ spanIndex ].data.isNull() )
+            {
+                span[ "data" ] = spanDataList[ spanIndex ].data;
+            }
             span[ "parent_span_id" ]  = spanDataList[ spanIndex ].parentSpanId;
             span[ "span_id" ]         = spanDataList[ spanIndex ].spanId;
             span[ "trace_id" ]        = traceId;
@@ -555,21 +566,25 @@ QJsonValue JQSentry::dateTimeToSentryTime(const QDateTime &time)
 QMutex JQSentrySpan::mutex_;
 
 JQSentrySpan::JQSentrySpan(
-    const QString &operationName,
-    const QString &description )
+    const QString &   operationName,
+    const QString &   description,
+    const QJsonValue &data )
 {
     spanData_.operationName = operationName;
     spanData_.description   = description;
-    spanData_.spanId        = QUuid::createUuid().toString().mid( 1, 36 ).remove( "-" ).mid( 0, 16 );
+    spanData_.status        = "ok";
+    spanData_.data          = data;
+
+    spanData_.spanId = QUuid::createUuid().toString().mid( 1, 36 ).remove( "-" ).mid( 0, 16 );
 
     spanData_.startTime = QDateTime::currentDateTime();
 }
 
 JQSentrySpan::~JQSentrySpan()
 {
-    if ( isCancel_ ) { return; }
-
     QMutexLocker locker( &mutex_ );
+
+    if ( isCancel_ ) { return; }
 
     spanData_.endTime = QDateTime::currentDateTime();
 
@@ -590,13 +605,14 @@ JQSentrySpan::~JQSentrySpan()
 }
 
 QSharedPointer< JQSentrySpan > JQSentrySpan::create(
+    const QSharedPointer< JQSentrySpan > &parent,
     const QString &                       operationName,
     const QString &                       description,
-    const QSharedPointer< JQSentrySpan > &parent )
+    const QJsonValue &                    data )
 {
     QMutexLocker locker( &mutex_ );
 
-    QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
+    QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description, data ) );
 
     if ( parent )
     {

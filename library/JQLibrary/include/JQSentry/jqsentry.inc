@@ -34,4 +34,21 @@ inline void JQSentrySpan::cancel()
     isCancel_ = true;
 }
 
+inline void JQSentrySpan::setStatus(const QString &status)
+{
+    spanData_.status = status;
+}
+
+inline QSharedPointer< JQSentrySpan > JQSentrySpan::create(
+    const QString &                       operationName,
+    const QString &                       description,
+    const QJsonValue &                    data )
+{
+    return create(
+        nullptr,
+        operationName,
+        description,
+        data );
+}
+
 #endif//JQLIBRARY_INCLUDE_JQSENTRY_JQSENTRY_INC_
