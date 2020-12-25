@@ -20,6 +20,12 @@ void something()
         auto readyDataSpan = JQSentrySpan::create( "DataProvider", "readyData", rootSpan );
 
         QThread::msleep( 20 );
+
+        if ( index == 2 )
+        {
+            // 不需要上传时可以cancel
+            readyDataSpan->cancel();
+        }
     }
 
     {
@@ -64,6 +70,6 @@ int main(int argc, char *argv[])
     something();
 
     // Sentry的数据会在后台上传，主线程必须开启事件循环
-    QTimer::singleShot( 10000, &app, &QCoreApplication::quit );
+    QTimer::singleShot( 5000, &app, &QCoreApplication::quit );
     return app.exec();
 }

@@ -28,6 +28,6 @@ int main(int argc, char *argv[])
     file.write( "balabala" );
 
     // Sentry的数据会在后台上传，主线程必须开启事件循环
-    QTimer::singleShot( 10000, &app, &QCoreApplication::quit );
+    QTimer::singleShot( 5000, &app, &QCoreApplication::quit );
     return app.exec();
 }

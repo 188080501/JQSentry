@@ -124,18 +124,17 @@ public:
     ~JQSentrySpan();
 
     static QSharedPointer< JQSentrySpan > create(
-        const QString &operationName,
-        const QString &description );
-
-    static QSharedPointer< JQSentrySpan > create(
         const QString &                       operationName,
         const QString &                       description,
-        const QSharedPointer< JQSentrySpan > &parent );
+        const QSharedPointer< JQSentrySpan > &parent = nullptr );
+
+    inline void cancel();
 
 private:
     static QMutex mutex_;
 
     JQSentrySpanData spanData_;
+    bool isCancel_ = false;
 
     QWeakPointer< JQSentrySpan > rootSpan_;
     QVector< JQSentrySpanData >  spanDataList_;

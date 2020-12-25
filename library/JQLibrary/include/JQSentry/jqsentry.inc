@@ -29,4 +29,9 @@ inline void JQSentry::setLoggerName(const QString &loggerName)
     clientName_ = loggerName;
 }
 
+inline void JQSentrySpan::cancel()
+{
+    isCancel_ = true;
+}
+
 #endif//JQLIBRARY_INCLUDE_JQSENTRY_JQSENTRY_INC_

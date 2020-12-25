@@ -567,6 +567,8 @@ JQSentrySpan::JQSentrySpan(
 
 JQSentrySpan::~JQSentrySpan()
 {
+    if ( isCancel_ ) { return; }
+
     QMutexLocker locker( &mutex_ );
 
     spanData_.endTime = QDateTime::currentDateTime();
@@ -588,20 +590,6 @@ JQSentrySpan::~JQSentrySpan()
 }
 
 QSharedPointer< JQSentrySpan > JQSentrySpan::create(
-    const QString &operationName,
-    const QString &description )
-{
-    QMutexLocker locker( &mutex_ );
-
-    QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
-
-    result->rootSpan_ = result.toWeakRef();
-    result->spanDataList_.push_back( { } );
-
-    return result;
-}
-
-QSharedPointer< JQSentrySpan > JQSentrySpan::create(
     const QString &                       operationName,
     const QString &                       description,
     const QSharedPointer< JQSentrySpan > &parent )
@@ -610,8 +598,16 @@ QSharedPointer< JQSentrySpan > JQSentrySpan::create(
 
     QSharedPointer< JQSentrySpan > result( new JQSentrySpan( operationName, description ) );
 
-    result->spanData_.parentSpanId = parent->spanData_.spanId;
-    result->rootSpan_ = parent->rootSpan_;
+    if ( parent )
+    {
+        result->rootSpan_ = parent->rootSpan_;
+        result->spanData_.parentSpanId = parent->spanData_.spanId;
+    }
+    else
+    {
+        result->rootSpan_ = result.toWeakRef();
+        result->spanDataList_.push_back( { } );
+    }
 
-    return result.toWeakRef();
+    return result;
 }
