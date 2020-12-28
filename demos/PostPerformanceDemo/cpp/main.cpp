@@ -6,9 +6,8 @@
 
 void something()
 {
-    // 模拟一些流程，通过msleep模拟耗时操作
-    // 这里是通过手动方式生成span，没有指定parent的为root span，生命周期结束后就会上传数据
-    // 指定parent的span，生命周期结束后，会写入结果数据到root span中，等待root span一起上传
+    // 通过手动方式生成span，生命周期结束后就会自动上传数据
+    // 指定parent的span，生命周期结束后，会写入结果数据到root span中，等待root span生命周期结束后一起上传
     // 结果数据包括创建span是指定的operationName、description、span创建时间和span销毁时间
 
     // 可以附带数据，方便调试
@@ -19,7 +18,7 @@ void something()
 
     auto rootSpan = JQSentrySpan::create( "WorkResult", "saveToFile", data );
 
-    QThread::msleep( 20 );
+    QThread::msleep( 20 ); // 模拟耗时操作
 
     for ( auto index = 0; index < 3; ++index )
     {
