@@ -150,6 +150,8 @@ public:
 
     inline void setStatus(const QString &status);
 
+    inline JQSentrySpanData spanData() const;
+
 private:
     static QMutex mutex_;
     static bool enabled_;
