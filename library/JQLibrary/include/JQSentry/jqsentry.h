@@ -3,6 +3,7 @@
 
 // C++ lib import
 #include <functional>
+#include <chrono>
 
 // Qt lib import
 #include <QObject>
@@ -31,8 +32,8 @@ struct JQSentrySpanData
     QString parentSpanId;
     QString spanId;
 
-    QDateTime startTime;
-    QDateTime endTime;
+    std::chrono::system_clock::duration startTime;
+    std::chrono::system_clock::duration endTime;
 };
 
 class JQSentryTransit: public QObject
@@ -94,7 +95,9 @@ private:
 
     static QByteArray xSentryAuth();
 
-    static QJsonValue dateTimeToSentryTime(const QDateTime &time);
+    static QJsonValue toSentryTime(const QDateTime &time);
+
+    static QJsonValue toSentryTime(const std::chrono::system_clock::duration &time);
 
 private:
     static QSharedPointer< QNetworkAccessManager > networkAccessManager_;

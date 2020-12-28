@@ -344,8 +344,8 @@ bool JQSentry::postPerformance(const QVector< JQSentrySpanData > &spanDataList)
 
     performanceObject[ "event_id" ]        = eventId;
     performanceObject[ "type" ]            = "transaction";
-    performanceObject[ "timestamp" ]       = dateTimeToSentryTime( spanDataList.first().endTime );
-    performanceObject[ "start_timestamp" ] = dateTimeToSentryTime( spanDataList.first().startTime );
+    performanceObject[ "timestamp" ]       = toSentryTime( spanDataList.first().endTime );
+    performanceObject[ "start_timestamp" ] = toSentryTime( spanDataList.first().startTime );
     performanceObject[ "transaction" ]     = spanDataList.first().description;
 
     {
@@ -386,8 +386,8 @@ bool JQSentry::postPerformance(const QVector< JQSentrySpanData > &spanDataList)
             span[ "parent_span_id" ]  = spanDataList[ spanIndex ].parentSpanId;
             span[ "span_id" ]         = spanDataList[ spanIndex ].spanId;
             span[ "trace_id" ]        = traceId;
-            span[ "start_timestamp" ] = dateTimeToSentryTime( spanDataList[ spanIndex ].startTime );
-            span[ "timestamp" ]       = dateTimeToSentryTime( spanDataList[ spanIndex ].endTime );
+            span[ "start_timestamp" ] = toSentryTime( spanDataList[ spanIndex ].startTime );
+            span[ "timestamp" ]       = toSentryTime( spanDataList[ spanIndex ].endTime );
 
             spans.push_back( span );
         }
@@ -476,7 +476,7 @@ QJsonObject JQSentry::sentryData()
 {
     QJsonObject data;
 
-    data[ "timestamp" ] = dateTimeToSentryTime( QDateTime::currentDateTime() );
+    data[ "timestamp" ] = toSentryTime( std::chrono::system_clock::now().time_since_epoch() );
     data[ "platform" ]  = "C++/Qt";
     data[ "logger" ] = clientName_;
 
@@ -556,9 +556,14 @@ QByteArray JQSentry::xSentryAuth()
                 "" ).toUtf8();
 }
 
-QJsonValue JQSentry::dateTimeToSentryTime(const QDateTime &time)
+QJsonValue JQSentry::toSentryTime(const QDateTime &time)
 {
     return static_cast< qreal >( time.toMSecsSinceEpoch() ) / 1000.0;
+}
+
+QJsonValue JQSentry::toSentryTime(const std::chrono::system_clock::duration &time)
+{
+    return static_cast< double >( std::chrono::duration_cast< std::chrono::microseconds >( time ).count() ) / 1000000.0;
 }
 
 // JQSentrySpan
@@ -577,7 +582,7 @@ JQSentrySpan::JQSentrySpan(
 
     spanData_.spanId = QUuid::createUuid().toString().mid( 1, 36 ).remove( "-" ).mid( 0, 16 );
 
-    spanData_.startTime = QDateTime::currentDateTime();
+    spanData_.startTime = std::chrono::system_clock::now().time_since_epoch();
 }
 
 JQSentrySpan::~JQSentrySpan()
@@ -588,7 +593,7 @@ JQSentrySpan::~JQSentrySpan()
 
     if ( isCancel_ ) { return; }
 
-    spanData_.endTime = QDateTime::currentDateTime();
+    spanData_.endTime = std::chrono::system_clock::now().time_since_epoch();
 
     if ( spanDataList_.isEmpty() )
     {
