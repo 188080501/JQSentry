@@ -29,6 +29,11 @@ inline void JQSentry::setLoggerName(const QString &loggerName)
     clientName_ = loggerName;
 }
 
+inline void JQSentrySpan::setEnabled(const bool &enabled)
+{
+    enabled_ = enabled;
+}
+
 inline void JQSentrySpan::cancel()
 {
     isCancel_ = true;

@@ -563,6 +563,7 @@ QJsonValue JQSentry::dateTimeToSentryTime(const QDateTime &time)
 
 // JQSentrySpan
 QMutex JQSentrySpan::mutex_;
+bool JQSentrySpan::enabled_ = true;
 
 JQSentrySpan::JQSentrySpan(
     const QString &   operationName,
@@ -581,6 +582,8 @@ JQSentrySpan::JQSentrySpan(
 
 JQSentrySpan::~JQSentrySpan()
 {
+    if ( !enabled_ ) { return; }
+
     QMutexLocker locker( &mutex_ );
 
     if ( isCancel_ ) { return; }

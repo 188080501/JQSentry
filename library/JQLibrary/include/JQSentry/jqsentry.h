@@ -141,12 +141,15 @@ public:
         const QString &                       description = QString(),
         const QJsonValue &                    data = QJsonValue() );
 
+    static inline void setEnabled(const bool &enabled);
+
     inline void cancel();
 
     inline void setStatus(const QString &status);
 
 private:
     static QMutex mutex_;
+    static bool enabled_;
 
     JQSentrySpanData spanData_;
     bool isCancel_ = false;
