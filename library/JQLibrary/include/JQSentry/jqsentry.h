@@ -61,6 +61,8 @@ public:
 
     static bool initialize(const QString &dsn);
 
+    static bool isAvailable();
+
     static void installMessageHandler(const int &acceptedType = QtWarningMsg | QtCriticalMsg);
 
     static bool serverReachable();

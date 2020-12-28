@@ -133,6 +133,11 @@ bool JQSentry::initialize(const QString &dsn)
     return true;
 }
 
+bool JQSentry::isAvailable()
+{
+    return networkAccessManager_ && continueFlag_;
+}
+
 void JQSentry::installMessageHandler(const int &acceptedType_)
 {
     static const auto defaultHandler = qInstallMessageHandler( nullptr );
@@ -170,9 +175,7 @@ bool JQSentry::serverReachable()
 
 bool JQSentry::postLog(const QString &log, const QtMsgType &type, const QMessageLogContext &context)
 {
-    if ( !networkAccessManager_ ) { return false; }
-
-    if ( !continueFlag_ ) { return false; }
+    if ( !isAvailable() ) { return false; }
 
     if ( log.contains( "QDisabledNetworkReply" ) ) { return false; }
 
@@ -240,9 +243,7 @@ bool JQSentry::postLog(const QString &log, const QtMsgType &type, const QMessage
 
 bool JQSentry::postMinidump(const QString &log, const QString &dumpFileName, const QByteArray &dumpFileData)
 {
-    if ( !networkAccessManager_ ) { return false; }
-
-    if ( !continueFlag_ ) { return false; }
+    if ( !isAvailable() ) { return false; }
 
     auto data = sentryData();
 
@@ -300,9 +301,7 @@ bool JQSentry::postMinidump(const QString &log, const QString &dumpFileName, con
 
 bool JQSentry::postPerformance(const QVector< JQSentrySpanData > &spanDataList)
 {
-    if ( !networkAccessManager_ ) { return false; }
-
-    if ( !continueFlag_ ) { return false; }
+    if ( !isAvailable() ) { return false; }
 
     if ( spanDataList.isEmpty() ) { return false; }
 
