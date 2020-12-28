@@ -39,7 +39,7 @@ QPointer< JQSentryTransit > JQSentry::transit_;
 bool JQSentry::continueFlag_ = true;
 
 QString JQSentry::clientName_ = "JQSentry";
-QString JQSentry::clientVersion_ = "1.3";
+QString JQSentry::clientVersion_ = "1.5";
 
 QString JQSentry::dsn_;
 QString JQSentry::protocol_;
