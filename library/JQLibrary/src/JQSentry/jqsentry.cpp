@@ -587,13 +587,13 @@ JQSentrySpan::JQSentrySpan(
 
 JQSentrySpan::~JQSentrySpan()
 {
+    spanData_.endTime = std::chrono::system_clock::now().time_since_epoch();
+
     if ( !enabled_ ) { return; }
 
     QMutexLocker locker( &mutex_ );
 
     if ( isCancel_ ) { return; }
-
-    spanData_.endTime = std::chrono::system_clock::now().time_since_epoch();
 
     if ( spanDataList_.isEmpty() )
     {
