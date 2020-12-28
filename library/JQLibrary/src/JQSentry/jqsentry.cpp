@@ -59,26 +59,26 @@ bool JQSentry::initialize(const QString &dsn)
 {
     if ( networkAccessManager_ )
     {
-        qDebug() << "Already initialized: Already initialized";
+        qDebug() << "JQSentry::initialized: Already initialized";
         return false;
     }
 
     if ( !qApp )
     {
-        qDebug() << "Cannot be used without QApplication";
+        qDebug() << "JQSentry::initialized: Cannot be used without QApplication";
         return false;
     }
 
     QUrl url( dsn );
     if ( dsn.isEmpty() || !url.isValid() )
     {
-        qDebug() << "JQSentry::initialize: dsn is not valid";
+        qDebug() << "JQSentry::initialize: DSN is not valid";
         return false;
     }
 
     if ( ( url.scheme().toLower() == "https" ) && ( !QSslSocket::supportsSsl() ) )
     {
-        qDebug() << "JQSentry::initialize: protocol is https but ssl is not support";
+        qDebug() << "JQSentry::initialize: Protocol is https but ssl is not support";
         return false;
     }
 
@@ -121,7 +121,7 @@ bool JQSentry::initialize(const QString &dsn)
     }();
 
 #ifndef QT_NO_DEBUG
-    qDebug().noquote() << "JQSentry: initialize succeed, project id:" << projectId_;
+    qDebug().noquote() << "JQSentry::initialize: succeed, project id:" << projectId_;
 #endif
 
     QObject::connect( qApp, &QCoreApplication::aboutToQuit, []() {
