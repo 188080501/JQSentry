@@ -181,6 +181,8 @@ bool JQSentry::postLog(const QString &log, const QtMsgType &type, const QMessage
 
     if ( log.contains( "QOpenGLContext" ) ) { return false; }
 
+    if ( log.contains( "Execution of PAC script" ) ) { return false; }
+
     if ( QThread::currentThread() != transit_->thread() )
     {
         const auto fileName = context.file;
